@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { useAuth0 } from '@auth0/auth0-react'
 
 const navItems = [
   { label: 'Upload Transcript', to: '/upload' },
@@ -14,29 +15,55 @@ const getNavClass = ({ isActive }: { isActive: boolean }) =>
       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
   ].join(' ')
 
-export const AppLayout = () => (
-  <div className="min-h-screen bg-slate-50">
-    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <div>
-          <p className="text-xs uppercase tracking-widest text-brand-500">
-            Auto Notes to Sheets
-          </p>
-          <h1 className="text-xl font-semibold text-slate-900">
-            AI call intelligence dashboard
-          </h1>
+export const AppLayout = () => {
+  
+  const { user, logout } = useAuth0()
+
+  const handleLogout = () => {
+    logout({
+      logoutParams: {
+        returnTo: window.location.origin, 
+      },
+    })
+  }
+
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-brand-500">
+              Auto Notes to Sheets
+            </p>
+            <h1 className="text-xl font-semibold text-slate-900">
+              AI call intelligence dashboard
+            </h1>
+          </div>
+          <div className="flex items-center gap-2"> {}
+            {navItems.map((item) => (
+              <NavLink key={item.label} to={item.to} className={getNavClass}>
+                {item.label}
+              </NavLink>
+            ))}
+
+            {}
+            <div className="ml-4 flex items-center gap-3">
+              <span className="text-sm text-slate-500">{user?.email}</span>
+              <button
+                onClick={handleLogout}
+                className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200"
+              >
+                Log Out
+              </button>
+            </div>
+            {}
+          </div>
         </div>
-        <div className="flex gap-2">
-          {navItems.map((item) => (
-            <NavLink key={item.label} to={item.to} className={getNavClass}>
-              {item.label}
-            </NavLink>
-          ))}
-        </div>
-      </div>
-    </header>
-    <main className="mx-auto max-w-7xl px-6 py-8">
-      <Outlet />
-    </main>
-  </div>
-)
+      </header>
+      <main className="mx-auto max-w-7xl px-6 py-8">
+        <Outlet />
+      </main>
+    </div>
+  )
+}
