@@ -44,7 +44,6 @@ cp .env.example .env
 ```
 
 When all three env vars are present, uploads invoke `POST <BASE_URL>/maistro` with the transcript and metadata parameters you saw in the editor. The agent’s variables (`summary`, `actionItems`, `sentimentAnalysis`, etc.) are mapped into the dashboard. If any variable is missing (or the env vars are not set), the UI falls back to the original in-browser mock summarizer so you can still demo without the API.
-
 ## Project structure
 
 ```

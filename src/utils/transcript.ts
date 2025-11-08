@@ -121,7 +121,6 @@ export const buildCallFromTranscript = (
     updatedAt: now,
   }
 }
-
 export const buildCallFromNeuralSeek = async (
   submission: TranscriptSubmission,
 ): Promise<CallRecord> => {
