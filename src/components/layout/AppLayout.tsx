@@ -38,7 +38,7 @@ export const AppLayout = () => {
               Auto Notes to Sheets
             </p>
             <h1 className="text-xl font-semibold text-slate-900">
-              AI call intelligence dashboard
+              AI Meeting Summarizer Dashboard
             </h1>
           </div>
           <div className="flex items-center gap-2"> {}
