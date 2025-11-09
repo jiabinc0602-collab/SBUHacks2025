@@ -60,3 +60,7 @@ src/
 
 - CSV exports run fully in the browser using the current in-memory dataset.
 - `CallsContext` simulates AI + Google Sheets responses so the UI feels production-ready even without APIs.
+
+### Financial health analysis
+
+Use `/financial` to paste balance, income, and cash flow statements. When `VITE_NEURALSEEK_FIN_AGENT` is set, the UI calls the `Financial_Health_Agent` and surfaces the score, strengths, risks, and recommended actions. Without the env var the page stays visible but reminds you to configure the agent.

@@ -4,6 +4,7 @@ import { useAuth0 } from '@auth0/auth0-react'
 const navItems = [
   { label: 'Upload Transcript', to: '/upload' },
   { label: 'Processed Calls', to: '/calls' },
+  { label: 'Financial Health', to: '/financial' },
   { label: 'Sheet Settings', to: '/settings' },
 ]
 

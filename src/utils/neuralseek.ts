@@ -1,15 +1,13 @@
 import type { Sentiment, TranscriptSubmission } from '../types'
 
-interface NeuralSeekVariableMap {
-  [key: string]: unknown
-}
+type NeuralSeekVariableMap = Record<string, unknown>
 
-interface NeuralSeekVariablesExpanded {
+type NeuralSeekVariablesExpanded = {
   name: string
   value: unknown
 }
 
-interface NeuralSeekRawResponse {
+type NeuralSeekRawResponse = {
   answer?: string
   sourceParts?: unknown[]
   render?: unknown[]
@@ -17,7 +15,7 @@ interface NeuralSeekRawResponse {
   variablesExpanded?: NeuralSeekVariablesExpanded[]
 }
 
-export interface NeuralSeekAgentResult {
+export interface CallAgentResult {
   summary?: string
   nextSteps?: string[]
   actionItems?: string[]
@@ -30,12 +28,43 @@ export interface NeuralSeekAgentResult {
   durationMinutes?: number
 }
 
-const envBaseUrl = import.meta.env.VITE_NEURALSEEK_BASE_URL?.replace(/\/$/, '')
-const envAgentName = import.meta.env.VITE_NEURALSEEK_AGENT
-const envApiKey = import.meta.env.VITE_NEURALSEEK_API_KEY
+export interface FinancialHealthInput {
+  companyName: string
+  reportingPeriod?: string
+  balanceSheet: string
+  incomeStatement: string
+  cashflowStatement: string
+}
 
-export const isNeuralSeekConfigured = () =>
-  Boolean(envBaseUrl && envAgentName && envApiKey)
+export interface FinancialHealthReport {
+  companyName: string
+  reportingPeriod?: string
+  summary: string
+  status: string
+  score: number
+  strengths: string[]
+  risks: string[]
+  recommendations: string[]
+  liquiditySignal?: string
+  profitabilitySignal?: string
+  runwaySignal?: string
+  rawAnswer?: string
+}
+
+const baseUrl = import.meta.env.VITE_NEURALSEEK_BASE_URL?.replace(/\/$/, '')
+const callAgentName = import.meta.env.VITE_NEURALSEEK_AGENT
+const finAgentName = import.meta.env.VITE_NEURALSEEK_FIN_AGENT
+const apiKey = import.meta.env.VITE_NEURALSEEK_API_KEY
+
+type AgentParams = Array<{ name: string; value: string }>
+
+const isBaseConfigured = () => Boolean(baseUrl && apiKey)
+
+export const isCallNotesAgentConfigured = () =>
+  Boolean(isBaseConfigured() && callAgentName)
+
+export const isFinancialAgentConfigured = () =>
+  Boolean(isBaseConfigured() && finAgentName)
 
 const parseArrayValue = (value: unknown): string[] => {
   if (Array.isArray(value)) {
@@ -52,7 +81,7 @@ const parseArrayValue = (value: unknown): string[] => {
         return parsed.map(String).map((entry) => entry.trim()).filter(Boolean)
       }
     } catch {
-      // Swallow JSON.parse errors and fall through to delimiter split.
+      // swallow json parse error and fall through
     }
 
     return trimmed
@@ -73,28 +102,8 @@ const parseNumberValue = (value: unknown): number | undefined => {
   return undefined
 }
 
-const parseSentimentValue = (value: unknown): { label: Sentiment; score: number } => {
-  if (
-    typeof value === 'object' &&
-    value !== null &&
-    'label' in value &&
-    typeof (value as { label: unknown }).label === 'string'
-  ) {
-    const label = normalizeSentimentLabel((value as { label: string }).label)
-    const score = parseNumberValue((value as { score?: unknown }).score) ?? defaultSentiment(label)
-    return { label, score }
-  }
-
-  if (typeof value === 'string') {
-    const label = normalizeSentimentLabel(value)
-    const scoreMatch = value.match(/-?\d+(\.\d+)?/)
-    const score =
-      (scoreMatch ? Number(scoreMatch[0]) : undefined) ?? defaultSentiment(label)
-    return { label, score }
-  }
-
-  return { label: 'Neutral', score: 0 }
-}
+const getStringValue = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.trim() ? value.trim() : undefined
 
 const normalizeSentimentLabel = (input: string): Sentiment => {
   const lower = input.toLowerCase()
@@ -104,10 +113,38 @@ const normalizeSentimentLabel = (input: string): Sentiment => {
   return 'Neutral'
 }
 
-const defaultSentiment = (label: Sentiment) => {
+const defaultSentimentScore = (label: Sentiment) => {
   if (label === 'Positive') return 0.6
   if (label === 'Negative') return -0.6
   return 0
+}
+
+const parseSentimentValue = (
+  value: unknown,
+): { label: Sentiment; score: number } => {
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    'label' in value &&
+    typeof (value as { label: unknown }).label === 'string'
+  ) {
+    const label = normalizeSentimentLabel((value as { label: string }).label)
+    const score =
+      parseNumberValue((value as { score?: unknown }).score) ??
+      defaultSentimentScore(label)
+    return { label, score }
+  }
+
+  if (typeof value === 'string') {
+    const label = normalizeSentimentLabel(value)
+    const scoreMatch = value.match(/-?\d+(?:\.\d+)?/)
+    const score =
+      (scoreMatch ? Number(scoreMatch[0]) : undefined) ??
+      defaultSentimentScore(label)
+    return { label, score }
+  }
+
+  return { label: 'Neutral', score: 0 }
 }
 
 const extractVariables = (response: NeuralSeekRawResponse): NeuralSeekVariableMap => {
@@ -118,71 +155,39 @@ const extractVariables = (response: NeuralSeekRawResponse): NeuralSeekVariableMa
   return combined
 }
 
-const buildParams = (submission: TranscriptSubmission) => {
-  const { metadata } = submission
-  return [
-    { name: 'callTranscript', value: submission.transcript },
-    { name: 'callTitle', value: metadata.title ?? '' },
-    { name: 'callAccount', value: metadata.account ?? '' },
-    { name: 'callContact', value: metadata.contact ?? '' },
-    { name: 'callOwner', value: metadata.owner ?? '' },
-    { name: 'callSource', value: metadata.source },
-    { name: 'callSourceName', value: metadata.sourceName ?? '' },
-    {
-      name: 'callMetadata',
-      value: JSON.stringify(metadata),
-    },
-  ]
-}
-
-const normalizeSummary = (
-  variables: NeuralSeekVariableMap,
-  fallback?: string,
-  answer?: string,
-) => {
-  const summaryCandidate =
-    variables.summary ??
-    variables.callSummary ??
-    variables.executiveSummary ??
-    answer
-
-  if (typeof summaryCandidate === 'string' && summaryCandidate.trim()) {
-    return summaryCandidate.trim()
+const callMaistro = async (
+  agent: string | undefined,
+  params: AgentParams,
+  userId = 'AutoNotesUser',
+): Promise<NeuralSeekRawResponse> => {
+  if (!isBaseConfigured()) {
+    throw new Error('NeuralSeek base URL or API key missing')
+  }
+  if (!agent) {
+    throw new Error('NeuralSeek agent name is missing')
   }
 
-  return fallback
-}
-
-export const runNeuralSeekAgent = async (
-  submission: TranscriptSubmission,
-): Promise<NeuralSeekAgentResult> => {
-  if (!isNeuralSeekConfigured()) {
-    throw new Error('NeuralSeek env variables are not configured.')
-  }
-
-  const requestBody = {
-    ntl: '',
-    agent: envAgentName,
-    params: buildParams(submission),
-    options: {
-      streaming: false,
-      user_id: submission.metadata.owner || 'AutoNotesUser',
-      lastTurn: [],
-    },
-    returnVariables: true,
-    returnVariablesExpanded: true,
-    returnRender: false,
-    returnSource: false,
-    maxRecursion: 10,
-  }
-
-  const response = await fetch(`${envBaseUrl}/maistro`, {
+  const response = await fetch(`${baseUrl}/maistro`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${envApiKey}`,
+      Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify(requestBody),
+    body: JSON.stringify({
+      ntl: '',
+      agent,
+      params,
+      options: {
+        streaming: false,
+        user_id: userId,
+        lastTurn: [],
+      },
+      returnVariables: true,
+      returnVariablesExpanded: true,
+      returnRender: false,
+      returnSource: false,
+      maxRecursion: 10,
+    }),
   })
 
   if (!response.ok) {
@@ -192,7 +197,31 @@ export const runNeuralSeekAgent = async (
     )
   }
 
-  const raw = (await response.json()) as NeuralSeekRawResponse
+  return (await response.json()) as NeuralSeekRawResponse
+}
+
+const buildCallParams = (submission: TranscriptSubmission): AgentParams => {
+  const { metadata } = submission
+  return [
+    { name: 'callTranscript', value: submission.transcript },
+    { name: 'callTitle', value: metadata.title ?? '' },
+    { name: 'callAccount', value: metadata.account ?? '' },
+    { name: 'callContact', value: metadata.contact ?? '' },
+    { name: 'callOwner', value: metadata.owner ?? '' },
+    { name: 'callSource', value: metadata.source },
+    { name: 'callSourceName', value: metadata.sourceName ?? '' },
+    { name: 'callMetadata', value: JSON.stringify(metadata) },
+  ]
+}
+
+export const runCallNotesAgent = async (
+  submission: TranscriptSubmission,
+): Promise<CallAgentResult> => {
+  const raw = await callMaistro(
+    callAgentName,
+    buildCallParams(submission),
+    submission.metadata.owner || 'AutoNotesUser',
+  )
   const variables = extractVariables(raw)
 
   const normalizeArray = (value: unknown) => {
@@ -201,7 +230,9 @@ export const runNeuralSeekAgent = async (
   }
 
   return {
-    summary: normalizeSummary(variables, undefined, raw.answer),
+    summary: getStringValue(
+      variables.summary ?? variables.callSummary ?? raw.answer,
+    ),
     nextSteps: normalizeArray(
       variables.nextSteps ?? variables.nextsteps ?? variables.followUps,
     ),
@@ -219,5 +250,78 @@ export const runNeuralSeekAgent = async (
       parseNumberValue(
         variables.durationMinutes ?? variables.estimatedDurationMinutes,
       ) ?? undefined,
+  }
+}
+
+const buildFinancialParams = (input: FinancialHealthInput): AgentParams => [
+  { name: 'companyName', value: input.companyName },
+  { name: 'reportingPeriod', value: input.reportingPeriod ?? '' },
+  { name: 'balanceSheet', value: input.balanceSheet },
+  { name: 'incomeStatement', value: input.incomeStatement },
+  { name: 'cashflowStatement', value: input.cashflowStatement },
+]
+
+const deriveHealthStatus = (score: number | undefined, fallback?: string) => {
+  if (fallback) return fallback
+  if (typeof score !== 'number') return 'Unknown'
+  if (score >= 0.75) return 'Strong'
+  if (score >= 0.55) return 'Stable'
+  if (score >= 0.35) return 'Watch'
+  return 'At Risk'
+}
+
+export const runFinancialHealthAgent = async (
+  input: FinancialHealthInput,
+): Promise<FinancialHealthReport> => {
+  const raw = await callMaistro(
+    finAgentName,
+    buildFinancialParams(input),
+    input.companyName || 'FinanceUser',
+  )
+  const variables = extractVariables(raw)
+  const score =
+    parseNumberValue(variables.healthScore ?? variables.overallHealthScore) ??
+    parseNumberValue(variables.score)
+  const summary =
+    getStringValue(
+      variables.healthSummary ?? variables.summary ?? raw.answer,
+    ) ?? 'NeuralSeek did not return a summary.'
+
+  return {
+    companyName: input.companyName,
+    reportingPeriod: input.reportingPeriod,
+    summary,
+    status: deriveHealthStatus(
+      score,
+      getStringValue(variables.healthStatus ?? variables.status),
+    ),
+    score: typeof score === 'number' ? score : 0,
+    strengths:
+      parseArrayValue(
+        variables.strengths ?? variables.highlights ?? variables.positives,
+      ) || [],
+    risks:
+      parseArrayValue(
+        variables.risks ?? variables.riskAlerts ?? variables.concerns,
+      ) || [],
+    recommendations:
+      parseArrayValue(
+        variables.recommendations ??
+          variables.improvementActions ??
+          variables.nextSteps,
+      ) || [],
+    liquiditySignal:
+      getStringValue(
+        variables.liquiditySignal ?? variables.liquidity ?? variables.cash,
+      ),
+    profitabilitySignal: getStringValue(
+      variables.profitabilitySignal ??
+        variables.profitability ??
+        variables.marginTrend,
+    ),
+    runwaySignal: getStringValue(
+      variables.runwaySignal ?? variables.cashRunway ?? variables.burn,
+    ),
+    rawAnswer: raw.answer,
   }
 }
