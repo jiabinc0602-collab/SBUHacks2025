@@ -5,6 +5,7 @@ import { CallsPage } from './pages/CallsPage'
 import { CallDetailsPage } from './pages/CallDetailsPage'
 import { SheetSettingsPage } from './pages/SheetSettingsPage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
+import { FinancialHealthPage } from './pages/FinancialHealthPage'
 
 const App = () => (
   <Routes>
@@ -22,6 +23,7 @@ const App = () => (
       <Route path="calls" element={<CallsPage />} />
       <Route path="calls/:id" element={<CallDetailsPage />} />
       <Route path="settings" element={<SheetSettingsPage />} />
+      <Route path="financial" element={<FinancialHealthPage />} />
       <Route path="*" element={<Navigate to="/upload" replace />} />
     </Route>
   </Routes>

@@ -3,7 +3,7 @@ import type {
   Sentiment,
   TranscriptSubmission,
 } from '../types'
-import { isNeuralSeekConfigured, runNeuralSeekAgent } from './neuralseek'
+import { isCallNotesAgentConfigured, runCallNotesAgent } from './neuralseek'
 
 const positiveWords = ['win', 'great', 'excited', 'happy', 'value', 'success']
 const negativeWords = ['concern', 'risk', 'delay', 'blocker', 'issue', 'problem']
@@ -125,7 +125,7 @@ export const buildCallFromNeuralSeek = async (
   submission: TranscriptSubmission,
 ): Promise<CallRecord> => {
   const fallbackRecord = buildCallFromTranscript(submission)
-  const neuralSeekData = await runNeuralSeekAgent(submission)
+  const neuralSeekData = await runCallNotesAgent(submission)
 
   const mergeTags = () => {
     if (!neuralSeekData.tags?.length) return fallbackRecord.tags
@@ -151,7 +151,7 @@ export const buildCallFromNeuralSeek = async (
 }
 
 export const buildCallRecord = async (submission: TranscriptSubmission) => {
-  if (!isNeuralSeekConfigured()) {
+  if (!isCallNotesAgentConfigured()) {
     return buildCallFromTranscript(submission)
   }
   return buildCallFromNeuralSeek(submission)
