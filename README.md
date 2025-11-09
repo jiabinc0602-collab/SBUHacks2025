@@ -33,7 +33,7 @@ npm run build
 
 The app launches at `http://localhost:5173`. No backend is required; AI outputs are mocked client-side for showcasing flows.
 
-## NeuralSeek integration
+## AI Workflow
 
 The upload flow can call your NeuralSeek mAIstro agent directly. Provide the endpoint details via `.env`:
 
