@@ -1,3 +1,17 @@
+## Note 
+This is a fork of the original SBUHacks 2025 project, built with Zurabi, Indranil, and Andrew. The original repo can be found [here](https://github.com/Zurab1K/SBUHacks2025).
+
+## My Contributions:
+As a core developer during the 48-hour hackathon, my primary contributions were:
+
+- Audio-to-AI Pipeline: Engineered the data flow to ingest audio files (.mp3, .m4a), process them through the AssemblyAI speech-to-text API, and feed the resulting transcript into our NeuralSeek AI agent for analysis.
+
+- Authentication: Implemented user login and Google auth integration using Auth0 to secure the application.
+
+- Frontend Debugging: Diagnosed and fixed a bug in the React frontend to ensure that the correct sentiment (Positive, Negative, Neutral) from the AI was dynamically displayed, rather than a hardcoded value.
+
+
+
 # Auto Notes to Sheets 
 
 Production-ready React + Vite experience for “Auto Notes to Sheets,” a tool that converts raw sales or CS call transcripts into structured notes that can be exported to Google Sheets.
