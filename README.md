@@ -2,7 +2,7 @@
 This is a fork of the original SBUHacks 2025 project, built with Zurabi, Indranil, and Andrew. The original repo can be found [here](https://github.com/Zurab1K/SBUHacks2025).
 
 ## My Contributions:
-As a core developer during the 48-hour hackathon, my primary contributions were:
+As a core developer during the 36-hour hackathon, my primary contributions were:
 
 - **Audio-to-AI Pipeline**: Engineered the data flow to ingest audio files (.mp3, .m4a), process them through the AssemblyAI speech-to-text API, and feed the resulting transcript into our NeuralSeek AI agent for analysis.
 
