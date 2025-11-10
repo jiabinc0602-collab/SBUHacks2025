@@ -4,11 +4,11 @@ This is a fork of the original SBUHacks 2025 project, built with Zurabi, Indrani
 ## My Contributions:
 As a core developer during the 48-hour hackathon, my primary contributions were:
 
-- Audio-to-AI Pipeline: Engineered the data flow to ingest audio files (.mp3, .m4a), process them through the AssemblyAI speech-to-text API, and feed the resulting transcript into our NeuralSeek AI agent for analysis.
+- **Audio-to-AI Pipeline**: Engineered the data flow to ingest audio files (.mp3, .m4a), process them through the AssemblyAI speech-to-text API, and feed the resulting transcript into our NeuralSeek AI agent for analysis.
 
-- Authentication: Implemented user login and Google auth integration using Auth0 to secure the application.
+- **Authentication**: Implemented user login and Google auth integration using Auth0 to secure the application.
 
-- Frontend Debugging: Diagnosed and fixed a bug in the React frontend to ensure that the correct sentiment (Positive, Negative, Neutral) from the AI was dynamically displayed, rather than a hardcoded value.
+- **Frontend Debugging**: Diagnosed and fixed a bug in the React frontend to ensure that the correct sentiment (Positive, Negative, Neutral) from the AI was dynamically displayed, rather than a hardcoded value.
 
 
 
